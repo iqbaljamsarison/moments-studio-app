@@ -1,0 +1,20 @@
+{
+  "name": "moments-studio-hybrid",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor starter for Moments Studio",
+  "scripts": {
+    "start": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "cap:add:ios": "cap add ios",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "vite": "^6.3.5"
+  }
+}
