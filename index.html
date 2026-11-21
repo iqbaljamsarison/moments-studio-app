@@ -24,7 +24,7 @@
 <div class="label">2. Story template</div><div class="chips" id="templates"><button class="chip active" data-template="template-editorial">Editorial</button><button class="chip" data-template="template-frame">Frame</button><button class="chip" data-template="template-minimal">Minimal</button></div>
 <div class="label">3. Personalise</div><input class="field" id="names" value="Your Moment" maxlength="45" aria-label="Story title"><input class="field" id="date" value="WEDDING CELEBRATION" maxlength="45" aria-label="Story subtitle">
 <div class="actions"><button class="btn" id="download" disabled>↓ Save image</button><button class="btn instagram" id="instagram" disabled>Instagram Story</button><button class="btn whatsapp" id="whatsapp" disabled>WhatsApp Status</button><button class="btn secondary" id="share" disabled>More sharing options</button><button class="btn outline" id="remove" disabled>Remove selected photo</button><button class="btn outline" id="clear">Reset editor</button></div>
-<p class="note">Creates a 1080 × 1920 story image. Instagram and WhatsApp sharing opens your device share sheet when supported; choose the app and confirm posting there. If an app is not offered, save the image and add it from that app.</p>
+<p class="note">Creates a 1080 × 1920 story image. Instagram button tests opening Instagram Story via its app link; this web demo cannot transfer the edited image into Story Composer. WhatsApp uses your device share sheet. Native image handoff will require an iOS/Android app integration.</p>
 </div>
 </aside>
 </div></main><footer>moments. studio · A simple space for beautiful memories</footer><div class="toast" id="toast"></div>
@@ -45,7 +45,25 @@ async function blob(){const c=await makeCanvas();return await new Promise(r=>c.t
 async function saveBlob(b){const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='moments-story.jpg';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2500)}
 async function shareTo(target){try{const b=await blob(),f=new File([b],'moments-story.jpg',{type:'image/jpeg'});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[f]}))){await navigator.share({files:[f],title:'My wedding moment',text:target==='instagram'?'Share this moment to your Instagram Story':target==='whatsapp'?'Share this moment to your WhatsApp Status':'A moment to remember'});toast('Share menu opened. Select '+(target==='instagram'?'Instagram':'WhatsApp')+' if it is available.')}else{await saveBlob(b);toast('Image saved. Open '+(target==='instagram'?'Instagram Story':'WhatsApp Status')+' and add it from Photos.')}}catch(e){if(e.name!=='AbortError')toast('Sharing is unavailable. Try Save image instead.')}}
 $('#download').onclick=async()=>{try{await saveBlob(await blob());toast('Story image saved to your device.')}catch(e){toast('Please select a photo first.')}};
-$('#instagram').onclick=()=>shareTo('instagram');$('#whatsapp').onclick=()=>shareTo('whatsapp');
+// Instagram app-launch experiment for mobile browsers.
+// This only tests whether the device can open Instagram; a web page cannot
+// place the edited image on iOS pasteboard for the official Stories handoff.
+$('#instagram').onclick=()=>{
+  toast('Trying to open Instagram…');
+  const startedAt = Date.now();
+  let leftPage = false;
+  const markHidden = () => { if (document.hidden) leftPage = true; };
+  document.addEventListener('visibilitychange', markHidden, {once:true});
+  window.location.href = 'instagram-stories://share';
+  // If the custom scheme did not open an app, offer the Instagram website.
+  setTimeout(()=>{
+    if (!leftPage && !document.hidden && Date.now()-startedAt >= 1200) {
+      const go = confirm('Instagram app did not open. Open Instagram website instead?');
+      if (go) window.location.href = 'https://www.instagram.com/';
+    }
+  }, 1600);
+};
+$('#whatsapp').onclick=()=>shareTo('whatsapp');
 $('#share').onclick=()=>shareTo('other');
 $('#remove').onclick=()=>{if(selected<0)return;URL.revokeObjectURL(items[selected].url);items.splice(selected,1);selected=-1;preview.removeAttribute('src');preview.style.display='none';$('#selected-label').textContent='No photo selected';['download','share','instagram','whatsapp','remove'].forEach(id=>$('#'+id).disabled=true);render();if(items.length)select(0);toast('Photo removed from this session.')};
 $('#clear').onclick=()=>{filter='none';template='template-editorial';$('#filters .chip').forEach((b,i)=>b.classList.toggle('active',i===0));$('#templates .chip').forEach((b,i)=>b.classList.toggle('active',i===0));story.className='story '+template;if(selected>=0)preview.style.filter='none';$('#names').value='Your Moment';$('#date').value='WEDDING CELEBRATION';$('#previewNames').textContent='Your Moment';$('#previewDate').textContent='WEDDING CELEBRATION';toast('Editor reset.')};
